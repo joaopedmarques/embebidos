@@ -17,6 +17,13 @@ __error__(char *pcFilename, uint32_t ui32Line)
 }
 #endif
 
+//codigo interrupt
+void GPIOF_Handler(void)
+{
+    // Handle the interrupt here
+
+    //meter flag que faz entrar num if na main e ler
+}
 
 int
 main(void)
@@ -82,9 +89,17 @@ main(void)
     GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_2, GPIO_HIGH_LEVEL);
     GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_3, GPIO_HIGH_LEVEL);
 
+    // Enable interrupts on PB
+    GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3);
+
     //
     // Loop forever.
     //
+
+    // Enable the NVIC
+    IntMasterEnable();
+
+
     while(1)
     {
         GPIOPinWrite(GPIO_PORTC_BASE, GPIO_PIN_4, GPIO_PIN_4); //Todos os pins Y do keypad a 1 para ver se alguma tecla é premida
