@@ -8,6 +8,8 @@
 #include "inc/hw_types.h"
 #include "LCD.h"
 
+//char tecla;
+
 
 #ifdef DEBUG
 void
@@ -18,9 +20,95 @@ __error__(char *pcFilename, uint32_t ui32Line)
 #endif
 
 //codigo interrupt
-void GPIOF_Handler(void)
+void PortBIntHandler(void)
 {
     // Handle the interrupt here
+
+            //Interrupt
+            Lcd_Clear();
+            Lcd_Write_Char('X');
+
+int8_t linha1, linha2, linha3, linha4;
+char tecla;
+
+    GPIOPinWrite(GPIO_PORTC_BASE, (GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6| GPIO_PIN_7), GPIO_PIN_4);
+        linha1 = GPIOPinRead(GPIO_PORTB_BASE,(GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3));
+        if (linha1 == 0x01){
+            tecla = '1';
+        }
+        else if (linha1 == 0x02){
+            tecla = '2';
+        }
+        else if (linha1 == 0x04){
+            tecla = '3';
+        }
+        else if (linha1 == 0x08){
+            tecla = 'F';
+        }
+
+        Lcd_Clear();
+        Lcd_Write_Char(tecla);
+
+
+    GPIOPinWrite(GPIO_PORTC_BASE, (GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6| GPIO_PIN_7), GPIO_PIN_5);
+        linha2 = GPIOPinRead(GPIO_PORTB_BASE,(GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3));
+        if (linha2 == 0x01){
+            tecla = '4';
+        }
+        else if (linha2 == 0x02){
+            tecla = '5';
+        }
+        else if (linha2 == 0x04){
+            tecla = '6';
+        }
+        else if (linha2 == 0x08){
+            tecla = 'E';
+        }
+
+        Lcd_Clear();
+        Lcd_Write_Char(tecla);
+
+    GPIOPinWrite(GPIO_PORTC_BASE, (GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6| GPIO_PIN_7), GPIO_PIN_6);
+        linha3 = GPIOPinRead(GPIO_PORTB_BASE,(GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3));
+        if (linha3 == 0x01){
+            tecla = '7';
+        }
+        else if (linha3 == 0x02){
+            tecla = '8';
+        }
+        else if (linha3 == 0x04){
+            tecla = '9';
+        }
+        else if (linha3 == 0x08){
+            tecla = 'D';
+        }
+
+        Lcd_Clear();
+        Lcd_Write_Char(tecla);
+
+    GPIOPinWrite(GPIO_PORTC_BASE, (GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6| GPIO_PIN_7), GPIO_PIN_7);
+        linha4 = GPIOPinRead(GPIO_PORTB_BASE,(GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3));
+        if (linha4 == 0x01){
+            tecla = 'A';
+        }
+        else if (linha4 == 0x02){
+            tecla = '0';
+        }
+        else if (linha4 == 0x04){
+            tecla = 'B';
+        }
+        else if (linha4 == 0x08){
+            tecla = 'C';
+        }
+
+        Lcd_Clear();
+        Lcd_Write_Char(tecla);
+
+
+    SysCtlDelay(7000000);
+
+
+            GPIOIntClear(GPIO_PORTB_BASE, GPIOIntStatus(GPIO_PORTB_BASE, true));
 
     //meter flag que faz entrar num if na main e ler
 }
@@ -43,12 +131,9 @@ main(void)
        SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); //Keypad X
        SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC); //Keypad y
 
-
-
     volatile uint32_t ui32Loop;
 
-    // Enable the GPIO port that is used for the on-board LED.
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+
     // Check if the peripheral access is enabled.
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOA))
     {
@@ -111,10 +196,10 @@ main(void)
         //
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0x0);
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, GPIO_PIN_1);
-
         //
         // Write to the LCD
         //
+        Lcd_Clear();
         Lcd_Write_Char('G');
         Lcd_Write_Char('R');
         Lcd_Write_Char('U');
@@ -125,21 +210,17 @@ main(void)
         //
         // Delay for a bit
         //
-        SysCtlDelay(20000000);
+        SysCtlDelay(2000000);
 
-        Lcd_Clear();
+        //Lcd_Clear();
 
-        //
         // Turn on/off the LED.
         //
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0x0); //Red LED
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2); //Blue LED
 
-        //
         // Delay for a bit.
         //
-        for(ui32Loop = 0; ui32Loop < 1000000; ui32Loop++)
-        {
-        }
+        SysCtlDelay(2000000);
     }
 }
