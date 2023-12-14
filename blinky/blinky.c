@@ -12,6 +12,20 @@
 #include "inc/hw_types.h"
 #include "LCD.h"
 
+/*
+#include <I2C_task.h>
+#include "driverlib/gpio.h"
+#include "driverlib/rom.h"
+#include "driverlib/uart.h"
+#include "utils/uartstdio.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "semphr.h"
+/*
+
+
+
 //char tecla;
 
 
