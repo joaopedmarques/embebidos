@@ -4,6 +4,10 @@
 #include "inc/hw_memmap.h"
 #include "driverlib/debug.h"
 #include "driverlib/gpio.h"
+#include "driverlib/pwm.h"
+#include "driverlib/pwm.c"
+//#include "driverlib/i2c.h"
+#include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
 #include "inc/hw_types.h"
 #include "LCD.h"
@@ -35,6 +39,7 @@ char tecla;
         linha1 = GPIOPinRead(GPIO_PORTB_BASE,(GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3));
         if (linha1 == 0x01){
             tecla = '1';
+            PWMOutputState(PWM0_BASE, PWM_OUT_3_BIT, true);
         }
         else if (linha1 == 0x02){
             tecla = '2';
@@ -93,6 +98,7 @@ char tecla;
         }
         else if (linha4 == 0x02){
             tecla = '0';
+            PWMOutputState(PWM0_BASE, PWM_OUT_3_BIT, false);
         }
         else if (linha4 == 0x04){
             tecla = 'B';
@@ -122,7 +128,8 @@ main(void)
        //
        SysCtlClockSet(SYSCTL_SYSDIV_4|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|
                        SYSCTL_OSC_MAIN);
-
+       // PWM enable
+       SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
        //
        // Enable and wait for the port to be ready for access
        //
@@ -147,7 +154,16 @@ main(void)
     while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOC))
     {
     }
+    // Wait for PWM
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM0))
+    {
+    }
 
+    // PWM pin
+    GPIOPinConfigure(GPIO_PB5_M0PWM3);
+    GPIOPinTypePWM(GPIO_PORTB_BASE, GPIO_PIN_5);
+    // configure PWM
+    PWMGenConfigure(PWM0_BASE, PWM_GEN_1, PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
 
     //enable port B interrupt handler keypad input
     GPIOIntRegister(GPIO_PORTB_BASE, PortBIntHandler);
@@ -177,12 +193,20 @@ main(void)
     // Enable interrupts on PB
     GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3);
 
+
+    // configure pwm period and starting pulse width
+    PWMGenPeriodSet(PWM0_BASE, PWM_GEN_1, 20000);
+    PWMPulseWidthSet(PWM0_BASE, PWM_OUT_3, 10000); // 0
+    PWMGenEnable(PWM0_BASE, PWM_GEN_1);
     //
     // Loop forever.
     //
 
     // Enable the NVIC
     IntMasterEnable();
+
+    // PWM Output
+    //PWMOutputState(PWM0_BASE, PWM_OUT_3_BIT, false);
 
 
     while(1)
@@ -206,7 +230,7 @@ main(void)
         Lcd_Write_Char('P');
         Lcd_Write_Char('O');
         Lcd_Write_Char('5');
-
+        //PWMOutputState(PWM0_BASE, PWM_OUT_3_BIT, true);  //always on test
         //
         // Delay for a bit
         //
