@@ -22,14 +22,16 @@ blinky.obj: C:/ti/ccs1100/tivaware_c_series_2_1_4_178/inc/hw_pwm.h
 blinky.obj: C:/ti/ccs1100/tivaware_c_series_2_1_4_178/inc/hw_sysctl.h
 blinky.obj: C:/ti/ccs1100/tivaware_c_series_2_1_4_178/inc/hw_types.h
 blinky.obj: C:/ti/ccs1100/tivaware_c_series_2_1_4_178/driverlib/interrupt.h
+blinky.obj: C:/ti/ccs1100/tivaware_c_series_2_1_4_178/driverlib/i2c.h
 blinky.obj: C:/ti/ccs1100/tivaware_c_series_2_1_4_178/driverlib/pin_map.h
 blinky.obj: C:/ti/ccs1100/tivaware_c_series_2_1_4_178/driverlib/sysctl.h
-blinky.obj: ../LCD.h
-blinky.obj: C:/ti/ccs1100/tivaware_c_series_2_1_4_178/inc/tm4c123gh6pm.h
-blinky.obj: C:/ti/ccs1100/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/include/stdlib.h
+blinky.obj: C:/ti/ccs1100/tivaware_c_series_2_1_4_178/inc/hw_i2c.h
 blinky.obj: C:/ti/ccs1100/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/include/math.h
 blinky.obj: C:/ti/ccs1100/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/include/_defs.h
 blinky.obj: C:/ti/ccs1100/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/include/machine/_limits.h
+blinky.obj: ../LCD.h
+blinky.obj: C:/ti/ccs1100/tivaware_c_series_2_1_4_178/inc/tm4c123gh6pm.h
+blinky.obj: C:/ti/ccs1100/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/include/stdlib.h
 
 ../blinky.c:
 
@@ -75,19 +77,23 @@ C:/ti/ccs1100/tivaware_c_series_2_1_4_178/inc/hw_types.h:
 
 C:/ti/ccs1100/tivaware_c_series_2_1_4_178/driverlib/interrupt.h:
 
+C:/ti/ccs1100/tivaware_c_series_2_1_4_178/driverlib/i2c.h:
+
 C:/ti/ccs1100/tivaware_c_series_2_1_4_178/driverlib/pin_map.h:
 
 C:/ti/ccs1100/tivaware_c_series_2_1_4_178/driverlib/sysctl.h:
 
-../LCD.h:
-
-C:/ti/ccs1100/tivaware_c_series_2_1_4_178/inc/tm4c123gh6pm.h:
-
-C:/ti/ccs1100/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/include/stdlib.h:
+C:/ti/ccs1100/tivaware_c_series_2_1_4_178/inc/hw_i2c.h:
 
 C:/ti/ccs1100/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/include/math.h:
 
 C:/ti/ccs1100/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/include/_defs.h:
 
 C:/ti/ccs1100/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/include/machine/_limits.h:
+
+../LCD.h:
+
+C:/ti/ccs1100/tivaware_c_series_2_1_4_178/inc/tm4c123gh6pm.h:
+
+C:/ti/ccs1100/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/include/stdlib.h:
 

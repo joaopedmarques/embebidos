@@ -6,11 +6,25 @@
 #include "driverlib/gpio.h"
 #include "driverlib/pwm.h"
 #include "driverlib/pwm.c"
-//#include "driverlib/i2c.h"
+#include "driverlib/i2c.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
 #include "inc/hw_types.h"
+#include "inc/hw_i2c.h"
+#include <math.h>
 #include "LCD.h"
+
+//#include "FreeRTOS.h"
+//#include "task.h"
+
+#define LED_PIN GPIO_PIN_0
+#define LED_PIN_2 GPIO_PIN_1
+#define GPIO_I2COSCL GPIO_PIN_0
+#define GPIO_I2COSDA GPIO_PIN_1
+#define BLINK_DELAY_MS 500
+//#define I2C_TMP_ADDR 0x48 // TMP 100
+//#define I2C_TEMP_REG 0x00
+//#define I2C_CONFIG_REG 0x00 //continuous mode 1 for low power
 
 /*
 #include <I2C_task.h>
@@ -22,7 +36,7 @@
 #include "task.h"
 #include "queue.h"
 #include "semphr.h"
-/*
+*/
 
 
 
@@ -36,6 +50,7 @@ __error__(char *pcFilename, uint32_t ui32Line)
     while(1);
 }
 #endif
+
 
 //codigo interrupt
 void PortBIntHandler(void)
@@ -132,10 +147,35 @@ char tecla;
 
     //meter flag que faz entrar num if na main e ler
 }
+/*
+void blink_task_1(void *pvParameters) {
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+  GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, LED_PIN_1);
 
-int
-main(void)
+  while (1) {
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_PIN_1, LED_PIN_1);
+    vTaskDelay(BLINK_DELAY_MS / portTICK_PERIOD_MS);
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_PIN_1, 0);
+    vTaskDelay(BLINK_DELAY_MS / portTICK_PERIOD_MS);
+  }
+}
+
+void blink_task_2(void *pvParameters) {
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+  GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, LED_PIN_2);
+
+  while (1) {
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_PIN_2, LED_PIN_2);
+    vTaskDelay(BLINK_DELAY_MS / portTICK_PERIOD_MS);
+    GPIOPinWrite(GPIO_PORTF_BASE, LED_PIN_2, 0);
+    vTaskDelay(BLINK_DELAY_MS / portTICK_PERIOD_MS);
+  }
+}
+*/
+int main(void)
 {
+
+    uint16_t test;
 
        //
        // Setup the system clock to run at 50 Mhz from PLL with crystal reference
@@ -144,6 +184,8 @@ main(void)
                        SYSCTL_OSC_MAIN);
        // PWM enable
        SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
+       // I2C enable
+       SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C0);
        //
        // Enable and wait for the port to be ready for access
        //
@@ -151,6 +193,8 @@ main(void)
        SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF); //Leds
        SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); //Keypad X
        SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC); //Keypad y
+       SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD); // I2C
+
 
     volatile uint32_t ui32Loop;
 
@@ -172,6 +216,10 @@ main(void)
     while (!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM0))
     {
     }
+    // wait for I2C
+    /*while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOD))
+    {
+    }*/
 
     // PWM pin
     GPIOPinConfigure(GPIO_PB5_M0PWM3);
@@ -181,6 +229,17 @@ main(void)
 
     //enable port B interrupt handler keypad input
     GPIOIntRegister(GPIO_PORTB_BASE, PortBIntHandler);
+
+
+    // I2C configure
+    GPIOPinConfigure(GPIO_I2COSCL);
+    GPIOPinConfigure(GPIO_I2COSDA);
+
+    GPIOPinTypeI2CSCL(GPIO_PORTD_BASE, GPIO_PIN_0); // SCL
+    GPIOPinTypeI2C(GPIO_PORTD_BASE, GPIO_PIN_1); // SDA
+
+    // Initialize M and S
+    I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), true);
 
     //
     // Enable the GPIO pin for the LED (PF3).  Set the direction as output, and
@@ -212,6 +271,22 @@ main(void)
     PWMGenPeriodSet(PWM0_BASE, PWM_GEN_1, 20000);
     PWMPulseWidthSet(PWM0_BASE, PWM_OUT_3, 10000); // 0
     PWMGenEnable(PWM0_BASE, PWM_GEN_1);
+
+
+    // ADDItional I2C stuff
+    /*I2CMasterSlaveAddrSet(I2C0_BASE, I2C_TMP_ADDR, false);
+
+    I2CMasterDataPut(I2C2_BASE, 0x00); //01?
+
+    I2CMasterControl(I2C2_BASE, I2C_MASTER_CMD_BURST_SEND_START);
+    while(I2CMasterBusy(I2C2_BASE));
+
+    I2CMasterDataPut(I2C2_BASE, 0x60); //why?
+
+    I2CMasterControl(I2C2_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
+    while(I2CMasterBusy(I2C2_BASE));*/
+
+
     //
     // Loop forever.
     //
@@ -222,6 +297,12 @@ main(void)
     // PWM Output
     //PWMOutputState(PWM0_BASE, PWM_OUT_3_BIT, false);
 
+    /*
+    while(1){
+      xTaskCreate(blink_task_1, "Blink Task 1", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+      xTaskCreate(blink_task_2, "Blink Task 2", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+      vTaskStartScheduler();
+    }*/
 
     while(1)
     {
@@ -256,6 +337,27 @@ main(void)
         //
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0x0); //Red LED
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2); //Blue LED
+
+
+        //READ I2C
+        //
+        /*I2CMasterSlaveAddrSet(I2C2_BASE, I2C_TMP_ADDR, false);  //write I2C
+
+        I2CMasterDataPut(I2C2_BASE, I2C_TEMP_REG);
+        I2CMasterControl(I2C2_BASE, I2C_MASTER_CMD_SINGLE_SEND);
+        while(I2CMasterBusy(I2C2_BASE));
+
+        I2CMasterSlaveAddrSet(I2C2_BASE, I2C_TMP_ADDR, true);  //read I2C
+
+        I2CMasterControl(I2C2_BASE, I2C_MASTER_CMD_BURST_RECEIVE_START);
+        while(I2CMasterBusy(I2C2_BASE));
+        test = I2CMasterDataGet(I2C2_BASE)<<8;
+
+        I2CMasterControl(I2C2_BASE, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
+        while(I2CMasterBusy(I2C2_BASE));
+        test |= I2CMasterDataGet(I2C2_BASE); */
+
+
 
         // Delay for a bit.
         //
