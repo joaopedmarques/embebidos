@@ -19,12 +19,11 @@
 
 #define LED_PIN GPIO_PIN_0
 #define LED_PIN_2 GPIO_PIN_1
-#define GPIO_I2COSCL GPIO_PIN_0
-#define GPIO_I2COSDA GPIO_PIN_1
 #define BLINK_DELAY_MS 500
-//#define I2C_TMP_ADDR 0x48 // TMP 100
-//#define I2C_TEMP_REG 0x00
-//#define I2C_CONFIG_REG 0x00 //continuous mode 1 for low power
+#define I2C_TMP_ADDR 0x48 // TMP 100
+#define I2C_TEMP_REG 0x00
+#define I2C_CONFIG_REG 0x01
+#define I2C_CONFIG_1 0x20
 
 /*
 #include <I2C_task.h>
@@ -172,10 +171,45 @@ void blink_task_2(void *pvParameters) {
   }
 }
 */
+
+float i2c_get_temp (void){
+
+    uint16_t aux = 0;
+    float aux_sign = 0;
+
+    I2CMasterSlaveAddrSet(I2C3_BASE, I2C_TMP_ADDR, false); // write
+
+    I2CMasterDataPut(I2C3_BASE, I2C_TEMP_REG);
+    I2CMasterDataPut(I2C3_BASE, I2C_MASTER_CMD_SINGLE_SEND);
+    while(I2CMasterBusy(I2C3_BASE));
+
+    I2CMasterSlaveAddrSet(I2C3_BASE, I2C_TMP_ADDR, true); // read
+
+    I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_RECEIVE_START);
+    while(I2CMasterBusy(I2C3_BASE));
+    aux = I2CMasterDataGet(I2C3_BASE);
+    aux = aux << 8;
+
+    I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
+    while(I2CMasterBusy(I2C3_BASE));
+    aux = aux | I2CMasterDataGet(I2C3_BASE);
+
+    if ((aux & 0x0800) == 0x0800){
+        aux_sign = -128;
+    }
+    else {
+        aux_sign = 0;
+    }
+    aux = aux & 0x07FF;
+
+    return (aux_sign + ((float) aux) * 0.06250);
+}
+
 int main(void)
 {
 
     uint16_t test;
+    float temp;
 
        //
        // Setup the system clock to run at 50 Mhz from PLL with crystal reference
@@ -185,7 +219,8 @@ int main(void)
        // PWM enable
        SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
        // I2C enable
-       SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C0);
+       SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C3);
+       SysCtlPeripheralReset(SYSCTL_PERIPH_I2C3);
        //
        // Enable and wait for the port to be ready for access
        //
@@ -217,9 +252,9 @@ int main(void)
     {
     }
     // wait for I2C
-    /*while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOD))
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOD))
     {
-    }*/
+    }
 
     // PWM pin
     GPIOPinConfigure(GPIO_PB5_M0PWM3);
@@ -231,15 +266,15 @@ int main(void)
     GPIOIntRegister(GPIO_PORTB_BASE, PortBIntHandler);
 
 
-    // I2C configure
-    GPIOPinConfigure(GPIO_I2COSCL);
-    GPIOPinConfigure(GPIO_I2COSDA);
+    // I2C pin setup
+    GPIOPinConfigure(GPIO_PD0_I2C3SCL);
+    GPIOPinConfigure(GPIO_PD1_I2C3SDA);
 
     GPIOPinTypeI2CSCL(GPIO_PORTD_BASE, GPIO_PIN_0); // SCL
     GPIOPinTypeI2C(GPIO_PORTD_BASE, GPIO_PIN_1); // SDA
 
     // Initialize M and S
-    I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), true);
+    I2CMasterInitExpClk(I2C3_BASE, SysCtlClockGet(), false);
 
     //
     // Enable the GPIO pin for the LED (PF3).  Set the direction as output, and
@@ -252,6 +287,8 @@ int main(void)
     GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7);   //definir pinos keypad Y como output    PB4,5,6,7
     GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3);    //definir pinos keypad X como input     PC0,1,2,3
     //GPIO_PIN_WRITE
+
+
 
     Lcd_Init();
 
@@ -273,18 +310,19 @@ int main(void)
     PWMGenEnable(PWM0_BASE, PWM_GEN_1);
 
 
-    // ADDItional I2C stuff
-    /*I2CMasterSlaveAddrSet(I2C0_BASE, I2C_TMP_ADDR, false);
+    // I2C conigure
+    I2CMasterSlaveAddrSet(I2C3_BASE, I2C_TMP_ADDR, false); // write
 
-    I2CMasterDataPut(I2C2_BASE, 0x00); //01?
+    I2CMasterDataPut(I2C3_BASE, I2C_CONFIG_REG); //01?
+    I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_SEND_START);
+    //while(I2CMasterBusy(I2C3_BASE));
 
-    I2CMasterControl(I2C2_BASE, I2C_MASTER_CMD_BURST_SEND_START);
-    while(I2CMasterBusy(I2C2_BASE));
 
-    I2CMasterDataPut(I2C2_BASE, 0x60); //why?
+    I2CMasterDataPut(I2C3_BASE, I2C_CONFIG_1); //why?
 
-    I2CMasterControl(I2C2_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
-    while(I2CMasterBusy(I2C2_BASE));*/
+    I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
+    while(I2CMasterBusy(I2C3_BASE));
+
 
 
     //
@@ -319,6 +357,7 @@ int main(void)
         // Write to the LCD
         //
         Lcd_Clear();
+        SysCtlDelay(2000000);
         Lcd_Write_Char('G');
         Lcd_Write_Char('R');
         Lcd_Write_Char('U');
@@ -338,7 +377,7 @@ int main(void)
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0x0); //Red LED
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2); //Blue LED
 
-
+        //temp = i2c_get_temp();
         //READ I2C
         //
         /*I2CMasterSlaveAddrSet(I2C2_BASE, I2C_TMP_ADDR, false);  //write I2C
