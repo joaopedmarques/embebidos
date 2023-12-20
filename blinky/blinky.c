@@ -181,17 +181,17 @@ float i2c_get_temp (void){
 
     I2CMasterDataPut(I2C3_BASE, I2C_TEMP_REG);
     I2CMasterDataPut(I2C3_BASE, I2C_MASTER_CMD_SINGLE_SEND);
-    while(I2CMasterBusy(I2C3_BASE));
+    while(I2CMasterBusBusy(I2C3_BASE));
 
     I2CMasterSlaveAddrSet(I2C3_BASE, I2C_TMP_ADDR, true); // read
 
     I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_RECEIVE_START);
-    while(I2CMasterBusy(I2C3_BASE));
+    while(I2CMasterBusBusy(I2C3_BASE));
     aux = I2CMasterDataGet(I2C3_BASE);
     aux = aux << 8;
 
     I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
-    while(I2CMasterBusy(I2C3_BASE));
+    while(I2CMasterBusBusy(I2C3_BASE));
     aux = aux | I2CMasterDataGet(I2C3_BASE);
 
     if ((aux & 0x0800) == 0x0800){
@@ -229,6 +229,7 @@ int main(void)
        SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); //Keypad X
        SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC); //Keypad y
        SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD); // I2C
+       SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE); // DEBUG
 
 
     volatile uint32_t ui32Loop;
@@ -256,6 +257,10 @@ int main(void)
     {
     }
 
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOE))
+        {
+        }
+
     // PWM pin
     GPIOPinConfigure(GPIO_PB5_M0PWM3);
     GPIOPinTypePWM(GPIO_PORTB_BASE, GPIO_PIN_5);
@@ -274,7 +279,7 @@ int main(void)
     GPIOPinTypeI2C(GPIO_PORTD_BASE, GPIO_PIN_1); // SDA
 
     // Initialize M and S
-    I2CMasterInitExpClk(I2C3_BASE, SysCtlClockGet(), false);
+    I2CMasterInitExpClk(I2C3_BASE, SysCtlClockGet(), true);
 
     //
     // Enable the GPIO pin for the LED (PF3).  Set the direction as output, and
@@ -286,6 +291,8 @@ int main(void)
     GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, D4 | D5 | D6 | D7 | EN | RS); //pins LCD como output
     GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7);   //definir pinos keypad Y como output    PB4,5,6,7
     GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3);    //definir pinos keypad X como input     PC0,1,2,3
+
+    //GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, GPIO_PIN_0); //DEBUG I2C
     //GPIO_PIN_WRITE
 
 
@@ -309,19 +316,25 @@ int main(void)
     PWMPulseWidthSet(PWM0_BASE, PWM_OUT_3, 10000); // 0
     PWMGenEnable(PWM0_BASE, PWM_GEN_1);
 
+/*
+    while(1){
 
-    // I2C conigure
+        GPIOPinWrite(GPIO_PORTE_BASE, GPIO_PIN_4, 0b01);
+
+    }*/
+
+    // I2C configure
     I2CMasterSlaveAddrSet(I2C3_BASE, I2C_TMP_ADDR, false); // write
 
     I2CMasterDataPut(I2C3_BASE, I2C_CONFIG_REG); //01?
     I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_SEND_START);
-    //while(I2CMasterBusy(I2C3_BASE));
+    while(I2CMasterBusBusy(I2C3_BASE));  //we add bus it works but not on osciloscope
 
 
     I2CMasterDataPut(I2C3_BASE, I2C_CONFIG_1); //why?
 
     I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
-    while(I2CMasterBusy(I2C3_BASE));
+    while(I2CMasterBusBusy(I2C3_BASE));
 
 
 
@@ -377,7 +390,7 @@ int main(void)
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0x0); //Red LED
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2); //Blue LED
 
-        //temp = i2c_get_temp();
+        temp = i2c_get_temp();
         //READ I2C
         //
         /*I2CMasterSlaveAddrSet(I2C2_BASE, I2C_TMP_ADDR, false);  //write I2C
