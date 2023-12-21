@@ -1,6 +1,7 @@
 //Includes
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "inc/hw_memmap.h"
 #include "driverlib/debug.h"
 #include "driverlib/gpio.h"
@@ -180,19 +181,32 @@ float i2c_get_temp (void){
     I2CMasterSlaveAddrSet(I2C3_BASE, I2C_TMP_ADDR, false); // write
 
     I2CMasterDataPut(I2C3_BASE, I2C_TEMP_REG);
-    I2CMasterDataPut(I2C3_BASE, I2C_MASTER_CMD_SINGLE_SEND);
-    while(I2CMasterBusBusy(I2C3_BASE));
+    I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_SINGLE_SEND);  //erro esta neste single read
+    while(I2CMasterBusy(I2C3_BASE));
 
     I2CMasterSlaveAddrSet(I2C3_BASE, I2C_TMP_ADDR, true); // read
 
     I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_RECEIVE_START);
-    while(I2CMasterBusBusy(I2C3_BASE));
+    while(I2CMasterBusy(I2C3_BASE));
     aux = I2CMasterDataGet(I2C3_BASE);
     aux = aux << 8;
 
+    //I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_RECEIVE_CONT);
+    //while(I2CMasterBusy(I2C3_BASE));
+
     I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
-    while(I2CMasterBusBusy(I2C3_BASE));
+    while(I2CMasterBusy(I2C3_BASE));
     aux = aux | I2CMasterDataGet(I2C3_BASE);
+
+
+    /*I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_SINGLE_SEND); //READ WITH SINGLE
+    while(I2CMasterBusy(I2C3_BASE));
+    aux = I2CMasterDataGet(I2C3_BASE);
+    aux = aux << 8;
+    I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE); //READ WITH SINGLE
+    while(I2CMasterBusy(I2C3_BASE));
+    aux = aux | I2CMasterDataGet(I2C3_BASE);*/
+
 
     if ((aux & 0x0800) == 0x0800){
         aux_sign = -128;
@@ -205,11 +219,73 @@ float i2c_get_temp (void){
     return (aux_sign + ((float) aux) * 0.06250);
 }
 
+// Reverses a string 'str' of length 'len'
+void reverse(char* str, int len)
+{
+    int i = 0, j = len - 1, temp;
+    while (i < j) {
+        temp = str[i];
+        str[i] = str[j];
+        str[j] = temp;
+        i++;
+        j--;
+    }
+}
+
+// Converts a given integer x to string str[].
+// d is the number of digits required in the output.
+// If d is more than the number of digits in x,
+// then 0s are added at the beginning.
+int intToStr(int x, char str[], int d)
+{
+    int i = 0;
+    while (x) {
+        str[i++] = (x % 10) + '0';
+        x = x / 10;
+    }
+
+    // If number of digits required is more, then
+    // add 0s at the beginning
+    while (i < d)
+        str[i++] = '0';
+
+    reverse(str, i);
+    str[i] = '\0';
+    return i;
+}
+
+// Converts a floating-point/double number to a string.
+void ftoa(float n, char* res, int afterpoint)
+{
+    // Extract integer part
+    int ipart = (int)n;
+
+    // Extract floating part
+    float fpart = n - (float)ipart;
+
+    // convert integer part to string
+    int i = intToStr(ipart, res, 0);
+
+    // check for display option after point
+    if (afterpoint != 0) {
+        res[i] = '.'; // add dot
+
+        // Get the value of fraction part upto given no.
+        // of points after dot. The third parameter
+        // is needed to handle cases like 233.007
+        fpart = fpart * pow(10, afterpoint);
+
+        intToStr((int)fpart, res + i + 1, afterpoint);
+    }
+}
+
 int main(void)
 {
 
     uint16_t test;
     float temp;
+    char temperature[20];
+
 
        //
        // Setup the system clock to run at 50 Mhz from PLL with crystal reference
@@ -279,7 +355,7 @@ int main(void)
     GPIOPinTypeI2C(GPIO_PORTD_BASE, GPIO_PIN_1); // SDA
 
     // Initialize M and S
-    I2CMasterInitExpClk(I2C3_BASE, SysCtlClockGet(), true);
+    I2CMasterInitExpClk(I2C3_BASE, SysCtlClockGet(), false);
 
     //
     // Enable the GPIO pin for the LED (PF3).  Set the direction as output, and
@@ -328,13 +404,13 @@ int main(void)
 
     I2CMasterDataPut(I2C3_BASE, I2C_CONFIG_REG); //01?
     I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_SEND_START);
-    while(I2CMasterBusBusy(I2C3_BASE));  //we add bus it works but not on osciloscope
+    while(I2CMasterBusy(I2C3_BASE));  //we add bus it works
 
 
     I2CMasterDataPut(I2C3_BASE, I2C_CONFIG_1); //why?
 
     I2CMasterControl(I2C3_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
-    while(I2CMasterBusBusy(I2C3_BASE));
+    while(I2CMasterBusy(I2C3_BASE));
 
 
 
@@ -371,12 +447,15 @@ int main(void)
         //
         Lcd_Clear();
         SysCtlDelay(2000000);
-        Lcd_Write_Char('G');
+
+        /*Lcd_Write_Char('G');
         Lcd_Write_Char('R');
         Lcd_Write_Char('U');
         Lcd_Write_Char('P');
         Lcd_Write_Char('O');
         Lcd_Write_Char('5');
+        */
+
         //PWMOutputState(PWM0_BASE, PWM_OUT_3_BIT, true);  //always on test
         //
         // Delay for a bit
@@ -391,6 +470,11 @@ int main(void)
         GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2); //Blue LED
 
         temp = i2c_get_temp();
+        ftoa(temp, temperature, 2);
+        Lcd_Write_String(temperature);
+
+        SysCtlDelay(2000000);
+
         //READ I2C
         //
         /*I2CMasterSlaveAddrSet(I2C2_BASE, I2C_TMP_ADDR, false);  //write I2C
